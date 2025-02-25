@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import styled, { keyframes } from "styled-components";
+import styled, { keyframes, css } from "styled-components";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEnvelope, FaLock, FaUserCircle, FaUser } from 'react-icons/fa';
 import AuthLayout from './AuthLayout';
@@ -15,6 +15,18 @@ const float = keyframes`
   0% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
   100% { transform: translateY(0px); }
+`;
+
+const glow = keyframes`
+  0% { box-shadow: 0 0 5px rgba(106, 17, 203, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(106, 17, 203, 0.4); }
+  100% { box-shadow: 0 0 5px rgba(106, 17, 203, 0.2); }
+`;
+
+const moveBackground = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 `;
 
 const CircleDecoration = styled.div`
@@ -37,6 +49,19 @@ const CircleDecoration = styled.div`
     bottom: -200px;
     right: -200px;
   }
+`;
+
+const BackgroundParticle = styled.div`
+  position: absolute;
+  width: ${props => props.size || '10px'};
+  height: ${props => props.size || '10px'};
+  background: ${props => props.color || 'rgba(255, 255, 255, 0.1)'};
+  border-radius: 50%;
+  top: ${props => props.top};
+  left: ${props => props.left};
+  animation: ${float} 6s ease-in-out infinite;
+  animation-delay: ${props => props.delay || '0s'};
+  z-index: 0;
 `;
 
 const CenteredContainer = styled.div`
@@ -168,15 +193,19 @@ const Input = styled.input`
   border: 2px solid transparent;
   border-radius: 16px;
   font-size: 16px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(5px);
 
   &:focus {
+    background: rgba(255, 255, 255, 0.98);
     border-color: #6a11cb;
-    box-shadow: 0 5px 20px rgba(106, 17, 203, 0.15);
+    box-shadow: 
+      0 0 0 4px rgba(106, 17, 203, 0.1),
+      0 5px 20px rgba(106, 17, 203, 0.15);
     outline: none;
-    transform: translateY(-2px);
+    transform: translateY(-2px) scale(1.01);
   }
 
   &::placeholder {
@@ -205,7 +234,8 @@ const Select = styled.select`
 `;
 
 const Button = styled.button`
-  background: linear-gradient(45deg, #6a11cb, #2575fc);
+  background: linear-gradient(45deg, #6a11cb, #2575fc, #6a11cb);
+  background-size: 200% auto;
   color: white;
   padding: 18px;
   border: none;
@@ -213,18 +243,22 @@ const Button = styled.button`
   font-size: 18px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 15px rgba(106, 17, 203, 0.2);
   text-transform: uppercase;
   letter-spacing: 1px;
+  animation: ${moveBackground} 3s infinite;
 
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(106, 17, 203, 0.3);
+    background-position: right center;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 
+      0 10px 30px rgba(106, 17, 203, 0.3),
+      0 0 0 4px rgba(106, 17, 203, 0.2);
   }
 
   &:active {
-    transform: translateY(-1px);
+    transform: translateY(-1px) scale(0.98);
   }
 `;
 
@@ -249,13 +283,32 @@ const Links = styled.div`
 `;
 
 const LoginWrapper = styled.div`
+  position: relative;
   background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   overflow: hidden;
   display: flex;
   min-height: 600px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: ${glow} 3s infinite;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, 
+      rgba(106, 17, 203, 0.1),
+      rgba(37, 117, 252, 0.1)
+    );
+    background-size: 400% 400%;
+    animation: ${moveBackground} 15s ease infinite;
+    z-index: -1;
+  }
 
   @media (max-width: 968px) {
     flex-direction: column;
@@ -297,6 +350,23 @@ const FormSection = styled.div`
   flex: 1;
   padding: 40px;
   background: rgba(255, 255, 255, 0.02);
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.05) 0%,
+      transparent 70%
+    );
+    pointer-events: none;
+  }
 
   @media (max-width: 968px) {
     padding: 30px;
@@ -357,6 +427,9 @@ const Login = () => {
   return (
     <AuthLayout wide>
       <LoginWrapper>
+        <BackgroundParticle size="15px" top="10%" left="5%" delay="0s" />
+        <BackgroundParticle size="20px" top="70%" left="80%" delay="2s" />
+        <BackgroundParticle size="12px" top="40%" left="90%" delay="4s" />
         <BrandSection>
           <BrandTitle>Chào Mừng Đến Với Quản Lý CLB</BrandTitle>
           <BrandText>

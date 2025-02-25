@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 import AuthLayout from './AuthLayout';
 import Logo from '../components/Logo';
+import axiosInstance from '../api/axiosConfig';
 
 const SignupWrapper = styled.div`
   background: rgba(255, 255, 255, 0.05);
@@ -170,37 +171,65 @@ const Links = styled.div`
   }
 `;
 
+const ErrorMessage = styled.span`
+  color: #ff4d4d;
+  font-size: 14px;
+  margin-top: 5px;
+  display: block;
+`;
+
 const Signup = () => {
-  const [ name, setName ] = useState("");
-  const [ email, setEmail ] = useState("");
-  const [ password, setPassword ] = useState("");
+  const [ formData, setFormData ] = useState({
+    name: "",
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    roles: "user" // Default role
+  });
+  const [ passwordError, setPasswordError ] = useState("");
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [ name ]: value
+    }));
+  };
+
+  const validatePasswords = () => {
+    if (formData.password !== formData.confirmPassword) {
+      setPasswordError("Mật khẩu không khớp!");
+      return false;
+    }
+    setPasswordError("");
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await fetch("http://localhost:8000/register", {
-        method: "post",
-        body: JSON.stringify({ name, email, password }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const result = await response.json();
 
-      if (result.auth) {
-        localStorage.setItem("user", JSON.stringify(result.user));
-        localStorage.setItem("token", JSON.stringify(result.auth));
-        toast.success("SignUp Successfully");
-        navigate("/");
-      } else {
-        toast.warning(result.error);
+    if (!validatePasswords()) {
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.post('/auth/signup', formData);
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Đăng ký thành công!");
+        navigate("/login");
       }
     } catch (error) {
-      toast.error("Something went wrong!");
+      const errorMessage = error.response?.data?.message || "Đăng ký thất bại!";
+      toast.error(errorMessage);
     }
   };
 
   return (
     <AuthLayout wide>
+      <ToastContainer />
       <SignupWrapper>
         <WelcomeSection>
           <Logo />
@@ -223,9 +252,22 @@ const Signup = () => {
               <FaUser />
               <Input
                 type="text"
+                name="name"
                 placeholder="Họ và tên"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </InputGroup>
+
+            <InputGroup>
+              <FaUser />
+              <Input
+                type="text"
+                name="username"
+                placeholder="Tên đăng nhập"
+                value={formData.username}
+                onChange={handleChange}
                 required
               />
             </InputGroup>
@@ -234,9 +276,10 @@ const Signup = () => {
               <FaEnvelope />
               <Input
                 type="email"
+                name="email"
                 placeholder="Địa chỉ email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleChange}
                 required
               />
             </InputGroup>
@@ -245,11 +288,25 @@ const Signup = () => {
               <FaLock />
               <Input
                 type="password"
+                name="password"
                 placeholder="Mật khẩu"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
                 required
               />
+            </InputGroup>
+
+            <InputGroup>
+              <FaLock />
+              <Input
+                type="password"
+                name="confirmPassword"
+                placeholder="Xác nhận mật khẩu"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+              {passwordError && <ErrorMessage>{passwordError}</ErrorMessage>}
             </InputGroup>
 
             <Button type="submit">Đăng Ký</Button>
