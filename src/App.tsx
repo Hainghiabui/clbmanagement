@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import { ClubForm } from './components/ClubForm';
 import DashboardLayout from './layouts/DashboardLayout';
 import Clubs from './pages/Clubs';
+import LoginAdmin from './pages/LoginAdmin';
 
 function App() {
     return (
@@ -22,6 +23,8 @@ function App() {
                 <Route path="login" element={<Login />} />
                 <Route path="signup" element={<Signup />} />
                 <Route path="createAdmin" element={<CreateAdmin />} />
+                <Route path="login-admin" element={<LoginAdmin />} />
+
             </Routes>
         </BrowserRouter>
     );

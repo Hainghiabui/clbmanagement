@@ -3,7 +3,10 @@ import styled, { keyframes } from "styled-components";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEnvelope, FaLock, FaUserCircle, FaUser } from 'react-icons/fa';
 import AuthLayout from './AuthLayout';
-import { loginService } from '../services/authService';
+import { loginAdmin } from '../services/adminAuthService';
+import Logo from '../components/Logo';
+
+const api = process.env.REACT_APP_API_URL;
 
 const gradient = keyframes`
   0% { background-position: 0% 50%; }
@@ -319,92 +322,90 @@ const BrandText = styled.p`
   z-index: 1;
 `;
 
-const Login = () => {
-  const [ formData, setFormData ] = useState({
-    username: "",
-    password: ""
-  });
-  const [ isLoading, setIsLoading ] = useState(false);
-  const navigate = useNavigate();
+const LoginAdmin = () => {
+    const [ formData, setFormData ] = useState({
+        username: "",
+        password: ""
+    });
+    const [ isLoading, setIsLoading ] = useState(false);
+    const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [ name ]: value
-    }));
-  };
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [ name ]: value
+        }));
+    };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
 
-    try {
-      const response = await loginService(formData);
+        try {
+            const response = await loginAdmin(formData);
+            alert("Đăng nhập thành công!");
+            navigate("/dashboard");
 
-      alert("Đăng nhập thành công!");
+        } catch (error) {
+            alert(error?.response?.data?.message || "Đăng nhập thất bại!");
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-      // Navigate based on user role or to default page
-      navigate("/dashboard");
+    return (
+        <AuthLayout wide>
+            <LoginWrapper>
+                <BrandSection>
+                    <Logo />
+                    <BrandTitle>Chào Mừng Đến Với Quản Lý CLB</BrandTitle>
+                    <BrandText>
+                        Truy cập bảng điều khiển để quản lý hoạt động câu lạc bộ,
+                        kết nối với thành viên và tổ chức sự kiện một cách hiệu quả.
+                    </BrandText>
+                </BrandSection>
+                <FormSection>
+                    <Logo />
+                    <Header>
+                        <Title>Đăng Nhập Admin</Title>
+                        <Subtitle>Truy cập tài khoản quản trị</Subtitle>
+                    </Header>
 
-    } catch (error) {
-      alert(error.message || "Đăng nhập thất bại!");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+                    <Form onSubmit={handleSubmit}>
+                        <InputGroup>
+                            <FaUser />
+                            <Input
+                                type="text"
+                                name="username"
+                                placeholder="Tên đăng nhập"
+                                value={formData.username}
+                                onChange={handleChange}
+                            />
+                        </InputGroup>
 
-  return (
-    <AuthLayout wide>
-      <LoginWrapper>
-        <BrandSection>
-          <BrandTitle>Chào Mừng Đến Với Quản Lý CLB</BrandTitle>
-          <BrandText>
-            Truy cập bảng điều khiển để quản lý hoạt động câu lạc bộ,
-            kết nối với thành viên và tổ chức sự kiện một cách hiệu quả.
-          </BrandText>
-        </BrandSection>
-        <FormSection>
-          <Header>
-            <Title>Đăng Nhập</Title>
-            <Subtitle>Truy cập tài khoản của bạn</Subtitle>
-          </Header>
+                        <InputGroup>
+                            <FaLock />
+                            <Input
+                                type="password"
+                                name="password"
+                                placeholder="Mật khẩu"
+                                value={formData.password}
+                                onChange={handleChange}
+                            />
+                        </InputGroup>
 
-          <Form onSubmit={handleSubmit}>
-            <InputGroup>
-              <FaUser />
-              <Input
-                type="text"
-                name="username"
-                placeholder="Tên đăng nhập"
-                value={formData.username}
-                onChange={handleChange}
-              />
-            </InputGroup>
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
+                        </Button>
+                    </Form>
 
-            <InputGroup>
-              <FaLock />
-              <Input
-                type="password"
-                name="password"
-                placeholder="Mật khẩu"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </InputGroup>
-
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
-            </Button>
-          </Form>
-
-          <Links>
-            <Link to="/signup">Chưa có tài khoản? Đăng ký ngay</Link>
-          </Links>
-        </FormSection>
-      </LoginWrapper>
-    </AuthLayout>
-  );
+                    {/* Remove signup link if not needed for admin */}
+                </FormSection>
+            </LoginWrapper>
+        </AuthLayout>
+    );
 };
 
-export default Login;
+export default LoginAdmin;

@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import styled, { keyframes, css } from "styled-components";
 import { FaUser, FaEnvelope, FaLock, FaBuilding, FaKey, FaSpinner } from "react-icons/fa";
 import AuthLayout from './AuthLayout';
 import axios from 'axios';
 import { createAdminAccount } from '../services/adminService';
+import Logo from '../components/Logo';
 
 const api = process.env.REACT_APP_BASE_URL;
 
@@ -312,22 +312,18 @@ const CreateAdmin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      alert("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
 
     setIsLoading(true);
     try {
       await createAdminAccount(formData);
-
-      toast.success("Tạo tài khoản thành công!", {
-        position: "top-right",
-        autoClose: 3000,
-        onClose: () => navigate("/login"),
-      });
-
+      alert("Tạo tài khoản thành công!");
+      navigate("/dashboard");
     } catch (error) {
-      toast.error(error.message || "Có lỗi xảy ra!", {
-        position: "top-right",
-      });
+      alert(error?.response?.data?.message || error.message || "Tạo tài khoản thất bại!");
     } finally {
       setIsLoading(false);
     }
@@ -336,6 +332,7 @@ const CreateAdmin = () => {
   return (
     <AuthLayout wide>
       <AdminWrapper>
+        <Logo />
         <PageHeader>
           <h1>Tạo Tài Khoản Quản Trị</h1>
           <p>Thiết lập tài khoản quản trị mới</p>

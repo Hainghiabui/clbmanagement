@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 import AuthLayout from './AuthLayout';
+import Logo from '../components/Logo';
 
 const SignupWrapper = styled.div`
   background: rgba(255, 255, 255, 0.05);
@@ -202,6 +203,7 @@ const Signup = () => {
     <AuthLayout wide>
       <SignupWrapper>
         <WelcomeSection>
+          <Logo />
           <h1>Tham Gia Cộng Đồng</h1>
           <p>
             Tạo tài khoản để tham gia hoạt động câu lạc bộ,
@@ -210,6 +212,7 @@ const Signup = () => {
         </WelcomeSection>
 
         <FormSection>
+          <Logo />
           <Header>
             <Title>Tạo Tài Khoản</Title>
             <Subtitle>Điền thông tin để bắt đầu</Subtitle>
