@@ -77,6 +77,7 @@ const Title = styled.h1`
   }
 `;
 
+// Chỉnh sửa FormContainer để đảm bảo responsive tốt hơn
 const FormContainer = styled.form`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -85,25 +86,30 @@ const FormContainer = styled.form`
   padding: 40px;
   border-radius: 20px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  width: 100%; // Thêm width 100%
+  box-sizing: border-box; // Thêm box-sizing
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    padding: 15px;
-    gap: 15px;
+    padding: 20px;
+    gap: 20px;
   }
 `;
 
+// Chỉnh sửa InputGroup
 const InputGroup = styled.div`
   position: relative;
   margin-bottom: 25px;
   display: flex;
   flex-direction: column;
+  width: 100%; // Thêm width 100%
 
   svg {
     position: absolute;
     left: 16px;
-    top: 50%; // Center vertically relative to input
-    transform: translateY(5px); // Fine-tune vertical position
+    // Thay đổi cách tính vị trí của icon
+    top: calc(50% + 12px); // 12px là nửa chiều cao của label
+    transform: translateY(-50%); // Sửa lại transform để căn giữa icon
     color: #3498db;
     font-size: 18px;
     transition: all 0.3s ease;
@@ -125,6 +131,7 @@ const Label = styled.label`
   font-weight: 600;
   color: #2c3e50;
   font-size: 0.95em;
+  line-height: 1.2; // Thêm line-height để kiểm soát chiều cao
 
   @media (max-width: 768px) {
     font-size: 0.9em;
@@ -139,18 +146,22 @@ const inputFocus = css`
   transform: translateY(-2px);
 `;
 
+// Chỉnh sửa Input
 const Input = styled.input`
   width: 100%;
   height: 55px;
-  padding: 0 45px;
+  padding: 0 45px; // Giữ nguyên padding để tránh text đè lên icon
   border: 2px solid ${props => props.error ? '#e74c3c' : 'transparent'};
   border-radius: 12px;
   font-size: 16px;
   background: rgba(255, 255, 255, 0.9);
   transition: all 0.3s ease;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box; // Thêm box-sizing
+  line-height: 55px; // Thêm line-height bằng với height
 
   &:focus {
+    outline: none; // Thêm outline none
     border-color: #3498db;
     box-shadow: 
       0 0 0 4px rgba(52, 152, 219, 0.2),
