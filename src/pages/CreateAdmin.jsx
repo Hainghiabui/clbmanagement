@@ -4,6 +4,10 @@ import { toast } from "react-toastify";
 import styled, { keyframes, css } from "styled-components";
 import { FaUser, FaEnvelope, FaLock, FaBuilding, FaKey, FaSpinner } from "react-icons/fa";
 import AuthLayout from './AuthLayout';
+import axios from 'axios';
+import { createAdminAccount } from '../services/adminService';
+
+const api = process.env.REACT_APP_BASE_URL;
 
 const shimmer = keyframes`
   0% { background-position: -1000px 0; }
@@ -273,10 +277,11 @@ const PageHeader = styled.div`
 const CreateAdmin = () => {
   const [ formData, setFormData ] = useState({
     name: "",
-    email: "",
+    username: "",
     password: "",
-    clubName: "",
-    securityKey: "",
+    confirmPassword: "",
+    email: "",
+    roles: "teacher"  // default role
   });
   const [ errors, setErrors ] = useState({});
   const [ isLoading, setIsLoading ] = useState(false);
@@ -285,12 +290,13 @@ const CreateAdmin = () => {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = "Vui lòng nhập tên";
+    if (!formData.username.trim()) newErrors.username = "Vui lòng nhập tên đăng nhập";
     if (!formData.email.trim()) newErrors.email = "Vui lòng nhập email";
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email không hợp lệ";
     if (!formData.password) newErrors.password = "Vui lòng nhập mật khẩu";
-    else if (formData.password.length < 6) newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
-    if (!formData.clubName.trim()) newErrors.clubName = "Vui lòng nhập tên câu lạc bộ";
-    if (!formData.securityKey.trim()) newErrors.securityKey = "Vui lòng nhập mã bảo mật";
+    else if (formData.password.length < 8) newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự";
+    if (!formData.confirmPassword) newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Mật khẩu không khớp";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -310,25 +316,16 @@ const CreateAdmin = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/super/createAdmin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      await createAdminAccount(formData);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      toast.success("Club Admin Created Successfully!", {
+      toast.success("Tạo tài khoản thành công!", {
         position: "top-right",
         autoClose: 3000,
         onClose: () => navigate("/login"),
       });
 
     } catch (error) {
-      toast.error(error.message, {
+      toast.error(error.message || "Có lỗi xảy ra!", {
         position: "top-right",
       });
     } finally {
@@ -340,13 +337,13 @@ const CreateAdmin = () => {
     <AuthLayout wide>
       <AdminWrapper>
         <PageHeader>
-          <h1>Tạo Tài Khoản Quản Trị CLB</h1>
-          <p>Thiết lập tài khoản quản trị mới cho câu lạc bộ của bạn</p>
+          <h1>Tạo Tài Khoản Quản Trị</h1>
+          <p>Thiết lập tài khoản quản trị mới</p>
         </PageHeader>
         <FormGrid>
           <FormContainer onSubmit={handleSubmit}>
             <InputGroup>
-              <Label>Tên Trưởng CLB</Label>
+              <Label>Họ và tên</Label>
               <FaUser />
               <Input
                 type="text"
@@ -354,9 +351,23 @@ const CreateAdmin = () => {
                 value={formData.name}
                 onChange={handleChange}
                 error={errors.name}
-                placeholder="Nhập tên trưởng CLB"
+                placeholder="Nhập họ và tên"
               />
               {errors.name && <ErrorText>{errors.name}</ErrorText>}
+            </InputGroup>
+
+            <InputGroup>
+              <Label>Tên đăng nhập</Label>
+              <FaUser />
+              <Input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                error={errors.username}
+                placeholder="Nhập tên đăng nhập"
+              />
+              {errors.username && <ErrorText>{errors.username}</ErrorText>}
             </InputGroup>
 
             <InputGroup>
@@ -382,37 +393,23 @@ const CreateAdmin = () => {
                 value={formData.password}
                 onChange={handleChange}
                 error={errors.password}
-                placeholder="Nhập mật khẩu"
+                placeholder="Nhập mật khẩu (ít nhất 8 ký tự)"
               />
               {errors.password && <ErrorText>{errors.password}</ErrorText>}
             </InputGroup>
 
             <InputGroup>
-              <Label>Tên Câu Lạc Bộ</Label>
-              <FaBuilding />
+              <Label>Xác Nhận Mật Khẩu</Label>
+              <FaLock />
               <Input
-                type="text"
-                name="clubName"
-                value={formData.clubName}
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
                 onChange={handleChange}
-                error={errors.clubName}
-                placeholder="Nhập tên câu lạc bộ"
+                error={errors.confirmPassword}
+                placeholder="Nhập lại mật khẩu"
               />
-              {errors.clubName && <ErrorText>{errors.clubName}</ErrorText>}
-            </InputGroup>
-
-            <InputGroup>
-              <Label>Mã Bảo Mật</Label>
-              <FaKey />
-              <Input
-                type="text"
-                name="securityKey"
-                value={formData.securityKey}
-                onChange={handleChange}
-                error={errors.securityKey}
-                placeholder="Nhập mã bảo mật"
-              />
-              {errors.securityKey && <ErrorText>{errors.securityKey}</ErrorText>}
+              {errors.confirmPassword && <ErrorText>{errors.confirmPassword}</ErrorText>}
             </InputGroup>
 
             <SubmitButton type="submit" disabled={isLoading}>
