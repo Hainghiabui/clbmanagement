@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Typography,
@@ -21,6 +21,11 @@ import {
 } from '@mui/material';
 import { Add, Edit, Delete, Visibility } from '@mui/icons-material';
 import { colors } from '../../theme/colors';
+import { Activity } from '../../models/Activity';
+import { getActivitiesInClub, createActivity, updateActivity, deleteActivity } from '../../services/activityService';
+import { ActivityRequest } from '../../models/ActivityRequest';
+import { toast, ToastContainer } from 'react-toastify';
+import Swal from 'sweetalert2';
 
 interface Event {
     id: string;
@@ -39,37 +44,71 @@ interface ClubEventManagementProps {
 }
 
 export default function ClubEventManagement({ clubId }: ClubEventManagementProps) {
-    const [ openDialog, setOpenDialog ] = useState(false);
-    const [ dialogMode, setDialogMode ] = useState<'add' | 'edit'>('add');
-    const [ selectedEvent, setSelectedEvent ] = useState<Event | null>(null);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+    const [selectedEvent, setSelectedEvent] = useState<ActivityRequest | null>(null);
+    const [events, setEvents] = useState<Activity[]>([]);
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [startTime, setStartTime] = useState('');
+    const [location, setLocation] = useState('');
+    const [image, setImage] = useState<File | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
-    // Mock data
-    const events: Event[] = [
-        {
-            id: '1',
-            title: 'Triển lãm Nghệ thuật Xuân 2024',
-            description: 'Triển lãm tác phẩm của các thành viên CLB',
-            startDate: '2024-01-15',
-            endDate: '2024-01-20',
-            location: 'Sảnh A - Tòa nhà B',
-            status: 'upcoming',
-            maxParticipants: 100,
-            currentParticipants: 45
-        },
-        {
-            id: '2',
-            title: 'Workshop Vẽ Màu Nước',
-            description: 'Hướng dẫn kỹ thuật vẽ màu nước cơ bản',
-            startDate: '2024-02-01',
-            endDate: '2024-02-01',
-            location: 'Phòng Workshop 2.1',
-            status: 'ongoing',
-            maxParticipants: 30,
-            currentParticipants: 28
-        },
-    ];
+    const getStatusLabelByTime = (startTime: Date | null) => {
+        if (!startTime) return 'Sắp diễn ra';
 
-    const getStatusColor = (status: Event[ 'status' ]) => {
+        const now = new Date();
+        const oneHourAfter = new Date(startTime);
+        oneHourAfter.setHours(oneHourAfter.getHours() + 2); // Giả sử sự kiện kéo dài 2 giờ
+
+        if (startTime > now) {
+            return 'Sắp diễn ra';
+        } else if (now >= startTime && now <= oneHourAfter) {
+            return 'Đang diễn ra';
+        } else {
+            return 'Đã kết thúc';
+        }
+    };
+
+    const getStatusColorByTime = (startTime: Date | null) => {
+        if (!startTime) return colors.status.info;
+
+        const now = new Date();
+        const oneHourAfter = new Date(startTime);
+        oneHourAfter.setHours(oneHourAfter.getHours() + 2); // Giả sử sự kiện kéo dài 2 giờ
+
+        if (startTime > now) {
+            return colors.status.info;
+        } else if (now >= startTime && now <= oneHourAfter) {
+            return colors.status.success;
+        } else {
+            return colors.status.warning;
+        }
+    };
+
+    // Update the fetchAllActivities function to use the clubId prop
+    const fetchAllActivities = async () => {
+        if (!clubId) return; // Don't fetch if no club is selected
+
+        try {
+            const response = await getActivitiesInClub(parseInt(clubId));
+            setEvents(response.data.content);
+        } catch (error) {
+            console.error("Error fetching activities:", error);
+            // You might want to add error handling UI here
+        }
+    }
+
+    // Update the useEffect to re-fetch when clubId changes
+    useEffect(() => {
+        if (clubId) {
+            fetchAllActivities();
+        }
+    }, [clubId]);
+
+    const getStatusColor = (status: Event['status']) => {
         switch (status) {
             case 'upcoming':
                 return colors.status.info;
@@ -84,7 +123,7 @@ export default function ClubEventManagement({ clubId }: ClubEventManagementProps
         }
     };
 
-    const getStatusLabel = (status: Event[ 'status' ]) => {
+    const getStatusLabel = (status: Event['status']) => {
         switch (status) {
             case 'upcoming':
                 return 'Sắp diễn ra';
@@ -101,32 +140,117 @@ export default function ClubEventManagement({ clubId }: ClubEventManagementProps
 
     const handleAddEvent = () => {
         setDialogMode('add');
+        resetForm();
         setSelectedEvent(null);
         setOpenDialog(true);
     };
 
-    const handleEditEvent = (event: Event) => {
+    const handleEditEvent = (event: Activity) => {
         setDialogMode('edit');
-        setSelectedEvent(event);
+        setTitle(event.title);
+        setDescription(event.description || '');
+        
+        // Format date for datetime-local input
+        const eventDate = new Date(event.startTime);
+        const formattedDate = eventDate.toISOString().slice(0, 16);
+        setStartTime(formattedDate);
+        
+        setLocation(event.location);
+        // Handle image if needed
+        setSelectedEvent({
+            clubId: parseInt(clubId),
+            title: event.title,
+            description: event.description,
+            startTime: event.startTime,
+            location: event.location,
+            image: null // or handle image if needed
+        });
+        setSelectedEventId(event.id);
         setOpenDialog(true);
     };
 
-    const handleDeleteEvent = (eventId: string) => {
-        // Implement delete logic
-        console.log('Delete event:', eventId);
+    const handleDeleteEvent = async (eventId: number) => {
+        Swal.fire({
+            title: 'Xác nhận xóa hoạt động?',
+            text: 'Hành động này không thể hoàn tác',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: colors.status.error,
+            cancelButtonColor: colors.status.info,
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await deleteActivity(eventId);
+                    await fetchAllActivities();
+                    toast.success('Đã xóa hoạt động');
+                } catch (error) {
+                    console.error('Error deleting activity:', error);
+                    toast.error('Đã có lỗi xảy ra khi xóa hoạt động');
+                }
+            }
+        });
+    };
+
+    const handleSubmit = async () => {
+        if (!title || !startTime || !location) {
+            // You should add proper validation feedback to the user
+            alert('Vui lòng điền đầy đủ thông tin bắt buộc');
+            return;
+        }
+        
+        setLoading(true);
+        
+        try {
+            const activityData: ActivityRequest = {
+                clubId: parseInt(clubId),
+                title,
+                description,
+                startTime: new Date(startTime),
+                location,
+                image
+            };
+            
+            if (dialogMode === 'add') {
+                await createActivity(activityData);
+            } else if (dialogMode === 'edit' && selectedEvent) {
+                await updateActivity(activityData, selectedEventId);
+            }
+            
+            // Refresh the activities list
+            await fetchAllActivities();
+            
+            // Close dialog and reset form
+            setOpenDialog(false);
+            resetForm();
+        } catch (error) {
+            console.error('Error saving activity:', error);
+            alert('Đã có lỗi xảy ra khi lưu hoạt động');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const resetForm = () => {
+        setTitle('');
+        setDescription('');
+        setStartTime('');
+        setLocation('');
+        setImage(null);
     };
 
     return (
         <Box>
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h5">Quản lý sự kiện</Typography>
+                <Typography variant="h5">Quản lý hoạt động</Typography>
                 <Button
                     variant="contained"
                     startIcon={<Add />}
                     onClick={handleAddEvent}
                     sx={{ borderRadius: 2, background: colors.primary.gradient }}
                 >
-                    Thêm sự kiện
+                    Thêm hoạt động
                 </Button>
             </Box>
 
@@ -134,36 +258,37 @@ export default function ClubEventManagement({ clubId }: ClubEventManagementProps
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Tên sự kiện</TableCell>
+                            <TableCell>Tên hoạt động</TableCell>
                             <TableCell>Thời gian</TableCell>
                             <TableCell>Địa điểm</TableCell>
-                            <TableCell>Số người tham gia</TableCell>
+                            <TableCell>Hình ảnh</TableCell>
                             <TableCell>Trạng thái</TableCell>
                             <TableCell align="center">Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {events.map((event) => (
+                        {events.length > 0 ? events.map((event) => (
                             <TableRow key={event.id}>
                                 <TableCell>{event.title}</TableCell>
                                 <TableCell>
                                     <Typography variant="body2" color="textSecondary">
-                                        {event.startDate}
-                                    </Typography>
-                                    <Typography variant="body2" color="textSecondary">
-                                        {event.endDate}
+                                        Bắt đầu: {new Date(event.startTime).toLocaleString('vi-VN')}
                                     </Typography>
                                 </TableCell>
                                 <TableCell>{event.location}</TableCell>
                                 <TableCell>
-                                    {event.currentParticipants}/{event.maxParticipants}
+                                    <img
+                                        src={`${process.env.REACT_APP_BASE_URL}/files/preview/${event.imageCode}`}
+                                        alt={event.title}
+                                        style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 4 }}
+                                    />
                                 </TableCell>
                                 <TableCell>
                                     <Chip
-                                        label={getStatusLabel(event.status)}
+                                        label={getStatusLabel(new Date(event.startTime) > new Date() ? 'upcoming' : 'completed')}
                                         sx={{
-                                            backgroundColor: getStatusColor(event.status) + '20',
-                                            color: getStatusColor(event.status),
+                                            backgroundColor: getStatusColor(new Date(event.startTime) > new Date() ? 'upcoming' : 'completed') + '20',
+                                            color: getStatusColor(new Date(event.startTime) > new Date() ? 'upcoming' : 'completed'),
                                             fontWeight: 500
                                         }}
                                         size="small"
@@ -173,7 +298,7 @@ export default function ClubEventManagement({ clubId }: ClubEventManagementProps
                                     <IconButton
                                         color="primary"
                                         size="small"
-                                        onClick={() => console.log('View details')}
+                                        onClick={() => console.log('View details', event.id)}
                                     >
                                         <Visibility />
                                     </IconButton>
@@ -193,7 +318,11 @@ export default function ClubEventManagement({ clubId }: ClubEventManagementProps
                                     </IconButton>
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        )) : (
+                            <TableRow>
+                                <TableCell colSpan={5} align="center">Không có hoạt động nào</TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </TableContainer>
@@ -211,71 +340,125 @@ export default function ClubEventManagement({ clubId }: ClubEventManagementProps
                 }}
             >
                 <DialogTitle>
-                    {dialogMode === 'add' ? 'Thêm sự kiện mới' : 'Chỉnh sửa thông tin sự kiện'}
+                    {dialogMode === 'add' ? 'Thêm hoạt động mới' : 'Chỉnh sửa thông tin hoạt động'}
                 </DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
                         <TextField
-                            label="Tên sự kiện"
+                            label="Tên hoạt động"
                             fullWidth
-                            defaultValue={selectedEvent?.title}
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                         />
                         <TextField
                             label="Mô tả"
                             fullWidth
                             multiline
                             rows={4}
-                            defaultValue={selectedEvent?.description}
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
                         />
                         <TextField
                             label="Ngày bắt đầu"
-                            type="date"
+                            type="datetime-local"
                             fullWidth
-                            defaultValue={selectedEvent?.startDate}
-                            InputLabelProps={{ shrink: true }}
-                        />
-                        <TextField
-                            label="Ngày kết thúc"
-                            type="date"
-                            fullWidth
-                            defaultValue={selectedEvent?.endDate}
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
                             InputLabelProps={{ shrink: true }}
                         />
                         <TextField
                             label="Địa điểm"
                             fullWidth
-                            defaultValue={selectedEvent?.location}
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
                         />
-                        <TextField
-                            label="Số người tham gia tối đa"
-                            type="number"
-                            fullWidth
-                            defaultValue={selectedEvent?.maxParticipants}
-                        />
-                        <TextField
-                            select
-                            label="Trạng thái"
-                            fullWidth
-                            defaultValue={selectedEvent?.status || 'upcoming'}
-                        >
-                            <MenuItem value="upcoming">Sắp diễn ra</MenuItem>
-                            <MenuItem value="ongoing">Đang diễn ra</MenuItem>
-                            <MenuItem value="completed">Đã kết thúc</MenuItem>
-                            <MenuItem value="cancelled">Đã hủy</MenuItem>
-                        </TextField>
+                        <Box sx={{
+                            border: '1px dashed #ccc',
+                            borderRadius: 1,
+                            p: 2,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 1
+                        }}>
+                            <Typography variant="body2">Ảnh bìa hoạt động</Typography>
+                            <Button
+                                component="label"
+                                variant="outlined"
+                                sx={{ mt: 1 }}
+                            >
+                                Chọn file hình ảnh
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    hidden
+                                    onChange={(e) => {
+                                        // Handle file change logic here
+                                        console.log(e.target.files?.[0]);
+                                        setImage(e.target.files?.[0] || null);
+                                    }}
+                                />
+                            </Button>
+                            {image && (
+                                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                                    <Typography variant="caption">Ảnh đã chọn</Typography>
+                                    <Box
+                                        component="img"
+                                        src={URL.createObjectURL(image)}
+                                        alt="Preview"
+                                        sx={{
+                                            maxWidth: '100%',
+                                            maxHeight: '150px',
+                                            mt: 1,
+                                            borderRadius: 1
+                                        }}
+                                    />
+                                </Box>
+                            )}
+                        </Box>
+                        <Box sx={{
+                            border: '1px solid #e0e0e0',
+                            borderRadius: 1,
+                            p: 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2
+                        }}>
+                            <Typography variant="body2">Trạng thái hoạt động: </Typography>
+                            <Chip
+                                label={getStatusLabelByTime(
+                                    dialogMode === 'edit' && selectedEvent ? new Date(selectedEvent.startTime) : null
+                                )}
+                                sx={{
+                                    backgroundColor: getStatusColorByTime(
+                                        dialogMode === 'edit' && selectedEvent ? new Date(selectedEvent.startTime) : null
+                                    ) + '20',
+                                    color: getStatusColorByTime(
+                                        dialogMode === 'edit' && selectedEvent ? new Date(selectedEvent.startTime) : null
+                                    ),
+                                    fontWeight: 500
+                                }}
+                                size="small"
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                                (Trạng thái được tính tự động dựa trên thời gian bắt đầu)
+                            </Typography>
+                        </Box>
                     </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
                     <Button
                         variant="contained"
-                        onClick={() => setOpenDialog(false)}
+                        onClick={handleSubmit}
                         sx={{ background: colors.primary.gradient }}
+                        disabled={loading}
                     >
                         {dialogMode === 'add' ? 'Thêm' : 'Lưu thay đổi'}
                     </Button>
                 </DialogActions>
             </Dialog>
+            <ToastContainer />
         </Box>
     );
 }

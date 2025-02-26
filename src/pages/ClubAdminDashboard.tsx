@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box, Grid, Typography, Tabs, Tab, Select, MenuItem,
     FormControl, InputLabel, Card, CardContent
@@ -10,6 +10,7 @@ import ClubEventManagement from '../components/clubAdmin/ClubEventManagement';
 import ClubPostManagement from '../components/clubAdmin/ClubPostManagement';
 import ClubOverview from '../components/clubAdmin/ClubOverview';
 import ClubMemberManagement from '../components/clubAdmin/ClubMemberManagement';
+import { getMyClubs } from '../services/clubService';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -29,16 +30,20 @@ function TabPanel(props: TabPanelProps) {
 export default function ClubAdminDashboard() {
     const [ tabValue, setTabValue ] = useState(0);
     const [ selectedClub, setSelectedClub ] = useState('');
-
-    // Mock data for clubs that the admin manages
-    const managedClubs = [
-        { id: '1', name: 'CLB Mỹ Thuật', memberCount: 30, eventCount: 5, postCount: 15 },
-        { id: '2', name: 'CLB Âm Nhạc', memberCount: 25, eventCount: 3, postCount: 10 },
-    ];
+    const [ clubs, setClubs ] = useState([]);
 
     const handleClubChange = (event: any) => {
         setSelectedClub(event.target.value);
     };
+
+    const fetchMyClubs = async () => {
+        const response = await getMyClubs();
+        setClubs(response.data.content);
+    };
+
+    useEffect(() => {
+        fetchMyClubs();
+    }, []);
 
     return (
         <Box sx={{
@@ -67,7 +72,7 @@ export default function ClubAdminDashboard() {
                         label="Chọn CLB"
                         onChange={handleClubChange}
                     >
-                        {managedClubs.map(club => (
+                        {clubs.map(club => (
                             <MenuItem key={club.id} value={club.id}>
                                 {club.name}
                             </MenuItem>
@@ -98,8 +103,7 @@ export default function ClubAdminDashboard() {
                 >
                     <Tab icon={<Dashboard />} label="Tổng quan" iconPosition="start" />
                     <Tab icon={<People />} label="Quản lý thành viên" iconPosition="start" />
-                    <Tab icon={<Event />} label="Quản lý sự kiện" iconPosition="start" />
-                    <Tab icon={<Article />} label="Quản lý bài đăng" iconPosition="start" />
+                    <Tab icon={<Event />} label="Quản lý hoạt động" iconPosition="start" />
                 </Tabs>
             </Box>
 
@@ -112,7 +116,7 @@ export default function ClubAdminDashboard() {
                             <Grid item xs={12} md={4}>
                                 <StatisticsCard
                                     title="Tổng số thành viên"
-                                    value={managedClubs.find(c => c.id === selectedClub)?.memberCount || 0}
+                                    value={clubs.find(c => c.id === selectedClub)?.memberCount || 0}
                                     icon={People}
                                     color={colors.status.info}
                                 />
@@ -120,7 +124,7 @@ export default function ClubAdminDashboard() {
                             <Grid item xs={12} md={4}>
                                 <StatisticsCard
                                     title="Sự kiện đang diễn ra"
-                                    value={managedClubs.find(c => c.id === selectedClub)?.eventCount || 0}
+                                    value={clubs.find(c => c.id === selectedClub)?.eventCount || 0}
                                     icon={Event}
                                     color={colors.status.warning}
                                 />
@@ -128,7 +132,7 @@ export default function ClubAdminDashboard() {
                             <Grid item xs={12} md={4}>
                                 <StatisticsCard
                                     title="Tổng số bài đăng"
-                                    value={managedClubs.find(c => c.id === selectedClub)?.postCount || 0}
+                                    value={clubs.find(c => c.id === selectedClub)?.postCount || 0}
                                     icon={Article}
                                     color={colors.status.success}
                                 />
