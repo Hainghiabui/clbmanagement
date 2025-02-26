@@ -5,7 +5,7 @@ import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     Paper, IconButton, Chip, Badge
 } from '@mui/material';
-import { Add, Edit, Delete, CheckCircle, Cancel, Visibility, People, Groups, EventNote, BarChart, Assignment, Event, Article } from '@mui/icons-material';
+import { Add, Edit, Delete, CheckCircle, Cancel, Visibility, People, Groups, EventNote, BarChart, Assignment, Event, Article, Search } from '@mui/icons-material';
 import { ClubForm } from '../components/ClubForm';
 import { PostApprovalList } from '../components/PostApprovalList';
 import StatisticsCard from '../components/StatisticsCard';
@@ -17,6 +17,7 @@ import { MembershipTrendChart } from '../components/dashboard/MembershipTrendCha
 import { EventStatusPieChart } from '../components/dashboard/EventStatusPieChart';
 import { ActiveEventsList } from '../components/dashboard/ActiveEventsList';
 import { PostManagement } from '../components/dashboard/PostManagement';
+import { TextField, InputAdornment } from '@mui/material';
 
 const slideIn = keyframes`
   from { opacity: 0; transform: translateX(-20px); }
@@ -49,6 +50,7 @@ export default function AdminDashboard() {
     const [ tabValue, setTabValue ] = useState(0);
     const [ openDialog, setOpenDialog ] = useState(false);
     const [ dialogMode, setDialogMode ] = useState<'add' | 'edit'>('add');
+    const [ searchQuery, setSearchQuery ] = useState('');
 
     const mockClubs = [
         {
@@ -56,7 +58,18 @@ export default function AdminDashboard() {
             name: 'CLB Mỹ Thuật',
             leader: 'Nguyễn Văn A',
             members: 25,
-            status: 'active',
+        },
+        {
+            id: 2,
+            name: 'CLB Âm Nhạc',
+            leader: 'Trần Thị B',
+            members: 30,
+        },
+        {
+            id: 3,
+            name: 'CLB Thể Thao',
+            leader: 'Lê Văn C',
+            members: 45,
         },
         // Add more mock data...
     ];
@@ -78,6 +91,11 @@ export default function AdminDashboard() {
         activeEvents: 8,
         totalPosts: 45,
     };
+
+    const filteredClubs = mockClubs.filter(club =>
+        club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        club.leader.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const handleAddClub = () => {
         setDialogMode('add');
@@ -235,49 +253,85 @@ export default function AdminDashboard() {
                         <UserManagement />
                     </TabPanel>
                     <TabPanel value={tabValue} index={2}>
-                        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Box sx={{
+                            mb: 3,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 2
+                        }}>
+                            <TextField
+                                placeholder="Tìm kiếm CLB hoặc trưởng CLB..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                sx={{ flex: 1 }}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Search />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
                             <Button
                                 variant="contained"
                                 startIcon={<Add />}
                                 onClick={handleAddClub}
-                                sx={{ borderRadius: 2 }}
+                                sx={{ borderRadius: 2, minWidth: 'fit-content' }}
                             >
                                 Thêm CLB mới
                             </Button>
                         </Box>
 
-                        <TableContainer component={Paper}>
+                        <TableContainer
+                            component={Paper}
+                            sx={{
+                                borderRadius: 2,
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                            }}
+                        >
                             <Table>
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>Tên CLB</TableCell>
                                         <TableCell>Trưởng CLB</TableCell>
                                         <TableCell align="center">Số thành viên</TableCell>
-                                        <TableCell align="center">Trạng thái</TableCell>
                                         <TableCell align="center">Thao tác</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {mockClubs.map((club) => (
-                                        <TableRow key={club.id}>
+                                    {filteredClubs.map((club) => (
+                                        <TableRow
+                                            key={club.id}
+                                            sx={{
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(0,0,0,0.02)',
+                                                }
+                                            }}
+                                        >
                                             <TableCell>{club.name}</TableCell>
                                             <TableCell>{club.leader}</TableCell>
                                             <TableCell align="center">{club.members}</TableCell>
                                             <TableCell align="center">
-                                                <Chip
-                                                    label={club.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}
-                                                    color={club.status === 'active' ? 'success' : 'default'}
+                                                <IconButton
+                                                    color="primary"
                                                     size="small"
-                                                />
-                                            </TableCell>
-                                            <TableCell align="center">
-                                                <IconButton color="primary" size="small">
+                                                    sx={{ '&:hover': { transform: 'scale(1.1)' } }}
+                                                >
                                                     <Visibility />
                                                 </IconButton>
-                                                <IconButton color="info" size="small">
+                                                <IconButton
+                                                    color="info"
+                                                    size="small"
+                                                    sx={{ '&:hover': { transform: 'scale(1.1)' } }}
+                                                >
                                                     <Edit />
                                                 </IconButton>
-                                                <IconButton color="error" size="small">
+                                                <IconButton
+                                                    color="error"
+                                                    size="small"
+                                                    sx={{ '&:hover': { transform: 'scale(1.1)' } }}
+                                                >
                                                     <Delete />
                                                 </IconButton>
                                             </TableCell>
