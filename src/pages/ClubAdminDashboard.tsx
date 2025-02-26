@@ -109,7 +109,7 @@ export default function ClubAdminDashboard() {
 
             {/* Main Content */}
             <Box sx={{ p: 4, overflow: 'auto' }}>
-                {selectedClub ? (
+                {selectedClub || (!selectedClub && tabValue === 0) ? (
                     <>
                         {/* Statistics Overview */}
                         <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -148,7 +148,7 @@ export default function ClubAdminDashboard() {
                             boxShadow: colors.shadow.card
                         }}>
                             <TabPanel value={tabValue} index={0}>
-                                <ClubOverview clubId={selectedClub} />
+                                <ClubOverview />
                             </TabPanel>
                             <TabPanel value={tabValue} index={1}>
                                 <ClubMemberManagement clubId={selectedClub} />

@@ -70,3 +70,12 @@ export const logout = async () => {
     const response = await axios.post(`${api}/auth/logout`);
     return response.data;
 };
+
+export const getAllUsers = async () => {
+    try {
+        const response = await axios.get(`${api}/public/get-all-users`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+}
