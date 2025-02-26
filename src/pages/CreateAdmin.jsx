@@ -334,7 +334,7 @@ const CreateAdmin = () => {
       <AdminWrapper>
         <Logo />
         <PageHeader>
-          <h1>Tạo Tài Khoản Quản Trị</h1>
+          <h1>Tạo Tài Khoản Quản Trị CLB</h1>
           <p>Thiết lập tài khoản quản trị mới</p>
         </PageHeader>
         <FormGrid>

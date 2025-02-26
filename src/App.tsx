@@ -10,20 +10,23 @@ import { ClubForm } from './components/ClubForm';
 import DashboardLayout from './layouts/DashboardLayout';
 import Clubs from './pages/Clubs';
 import LoginAdmin from './pages/LoginAdmin';
+import AdminDashboard from './pages/AdminDashboard';
+import ClubAdminDashboard from './pages/ClubAdminDashboard';
 
 function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="dashboard-admin" element={<AdminDashboard />} />
                 <Route path="clubs" element={<Clubs />} />
                 {/* <Route path="/" element={<DashboardLayout children={undefined} />}>
                 </Route> */}
-                <Route path="/" element={<CreateAdmin />} />
+                <Route path="/" element={<LoginAdmin />} />
                 <Route path="login" element={<Login />} />
                 <Route path="signup" element={<Signup />} />
                 <Route path="createAdmin" element={<CreateAdmin />} />
                 <Route path="login-admin" element={<LoginAdmin />} />
+                <Route path="dashboard" element={<ClubAdminDashboard />} />
 
             </Routes>
         </BrowserRouter>

@@ -115,7 +115,7 @@ const InputGroup = styled.div`
 `;
 
 const Input = styled.input`
-  width: 100%;
+  width: 89%;
   padding: 16px 16px 16px 50px;
   border: 2px solid transparent;
   border-radius: 12px;
@@ -232,7 +232,7 @@ const Signup = () => {
       <ToastContainer />
       <SignupWrapper>
         <WelcomeSection>
-          <Logo />
+          {/* <Logo /> */}
           <h1>Tham Gia Cộng Đồng</h1>
           <p>
             Tạo tài khoản để tham gia hoạt động câu lạc bộ,

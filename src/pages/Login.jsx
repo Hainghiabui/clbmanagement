@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled, { keyframes, css } from "styled-components";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEnvelope, FaLock, FaUserCircle, FaUser } from 'react-icons/fa';
+
 import AuthLayout from './AuthLayout';
 import { loginService } from '../services/authService';
 
@@ -188,7 +189,7 @@ const InputGroup = styled.div`
 `;
 
 const Input = styled.input`
-  width: 100%;
+  width: 88%;
   padding: 18px 20px 18px 55px;
   border: 2px solid transparent;
   border-radius: 16px;
@@ -431,11 +432,11 @@ const Login = () => {
         <BackgroundParticle size="20px" top="70%" left="80%" delay="2s" />
         <BackgroundParticle size="12px" top="40%" left="90%" delay="4s" />
         <BrandSection>
-          <BrandTitle>Chào Mừng Đến Với Quản Lý CLB</BrandTitle>
-          <BrandText>
+          <BrandTitle>Chào Mừng Đến Với Các CLB Trường THCS Ngô Quyền</BrandTitle>
+          {/* <BrandText>
             Truy cập bảng điều khiển để quản lý hoạt động câu lạc bộ,
             kết nối với thành viên và tổ chức sự kiện một cách hiệu quả.
-          </BrandText>
+          </BrandText> */}
         </BrandSection>
         <FormSection>
           <Header>
